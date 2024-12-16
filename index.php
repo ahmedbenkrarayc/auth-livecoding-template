@@ -1,3 +1,55 @@
+<?php
+
+require './utils/db.php';
+require './guards/authGuard.php';
+
+if(!isAuth('guest')){
+    header('Location: ./'.$_COOKIE['user_role'].'/dashboard.php');
+}
+
+$emailError = '';
+$passwordError = '';
+
+if($_SERVER['REQUEST_METHOD'] == 'POST'){
+    if(isset($_POST['email'])){
+        $emailError = '';
+    }else{
+        $emailError = 'Email is required !';
+    }
+
+    if(isset($_POST['password'])){
+        $passwordError = '';
+    }else{
+        $passwordError = 'Password is required !';
+    }
+
+    if(isset($_POST['email']) && isset($_POST['password'])){
+        $stmt = $conn->prepare("SELECT id, role, password FROM user WHERE email = ? LIMIT 1");
+        $stmt->bind_param('s', $_POST['email']);
+        $stmt->execute();
+        $stmt->bind_result($id, $res_role, $res_password);
+
+        if($stmt->fetch()){
+            $emailError = '';
+            if(md5($_POST['password']) == $res_password){
+                $passwordError = '';
+                //correct 
+                setcookie('user_id', $id, time() + 24 * 60 * 60, '/');
+                setcookie('user_role', $res_role, time() + 24 * 60 * 60, '/');
+                //reload page
+                header('Location: '.$_SERVER['PHP_SELF']);
+            }else{
+                $passwordError = 'Wrong password';
+            }
+        }else{
+            $emailError = 'There\'s nouser with this email !';
+        }
+    }
+}
+
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,15 +68,16 @@
             </div>
             <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
                 <div class="bg-white dark:bg-gray-700 px-4 pb-4 pt-8 sm:rounded-lg sm:px-10 sm:pb-6 sm:shadow">
-                    <form class="space-y-6">
+                    <form method="post" action="<?php echo $_SERVER['PHP_SELF'] ?>" class="space-y-6">
                         <div>
                             <label for="email" class="block text-sm font-medium text-gray-700 dark:text-white">Email address /
                                 Username</label>
                             <div class="mt-1">
-                                <input id="email" type="text" data-testid="username" required=""
+                                <input id="email" name="email" type="text" data-testid="username" required=""
                                     class="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder-gray-300 dark:focus:border-indigo-400 dark:focus:ring-indigo-400 sm:text-sm"
-                                    value="">
+                                    value="<?php echo isset($_POST['email']) ? $_POST['email'] : '' ?>">
                             </div>
+                            <span class="text-red-500 text-xs"><?php echo $emailError ?></span>
                         </div>
                         <div>
                             <label for="password" class="block text-sm font-medium text-gray-700 dark:text-white">Password</label>
@@ -34,6 +87,7 @@
                                     class="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder-gray-300 dark:focus:border-indigo-400 dark:focus:ring-indigo-400 sm:text-sm"
                                     value="">
                             </div>
+                            <span class="text-red-500 text-xs"><?php echo $passwordError ?></span>
                         </div>
                         <div class="flex items-center justify-between">
                             <div class="flex items-center">

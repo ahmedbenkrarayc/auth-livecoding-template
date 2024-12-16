@@ -1,3 +1,12 @@
+<?php
+require './../guards/authGuard.php';
+
+if(!isAuth('user')){
+    header('Location: ./../index.php');
+}
+
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,7 +18,8 @@
 <body class="min-h-screen flex justify-center items-center">
     <div class="text-[30px] *:text-center">
         <h1>User</h1>
-        <h2>Welcome, Ahmed Benkrara to your dashboard</h2>
+        <h2>Welcome to your dashboard</h2>
+        <a href="./../utils/logout.php">logout</a>
     </div>
 </body>
 </html>
